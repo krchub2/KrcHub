@@ -1,9 +1,14 @@
 import express from "express";
 import dotenv from "dotenv";
 import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
 import { google } from "googleapis";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,7 +45,10 @@ function cleanupSessions() {
 
 setInterval(cleanupSessions, 60_000);
 
-app.use(express.static("public"));
+/*
+  Static files
+*/
+app.use(express.static(path.join(__dirname, "public")));
 
 /*
   Google OAuth
@@ -91,9 +99,6 @@ app.get("/oauth2callback", async (req, res) => {
       auth
     });
 
-    /*
-      Find KrcHub automatically.
-    */
     console.log("Finding @KrcHub channel...");
 
     const channelResponse = await youtube.channels.list({
@@ -105,7 +110,10 @@ app.get("/oauth2callback", async (req, res) => {
 
     if (!channel || !channel.id) {
       console.error("KrcHub channel was not found.");
-      return res.redirect("/?status=channel_error");
+
+      return res.redirect(
+        "/?status=channel_error"
+      );
     }
 
     const krchubChannelId = channel.id;
@@ -115,9 +123,6 @@ app.get("/oauth2callback", async (req, res) => {
       krchubChannelId
     );
 
-    /*
-      Check user's subscriptions.
-    */
     console.log("Checking YouTube subscription...");
 
     let subscribed = false;
@@ -155,21 +160,19 @@ app.get("/oauth2callback", async (req, res) => {
 
     } while (pageToken);
 
-    /*
-      User is not subscribed.
-    */
     if (!subscribed) {
-      console.log("KrcHub subscription NOT detected.");
+      console.log(
+        "KrcHub subscription NOT detected."
+      );
 
       return res.redirect(
         "/?status=not_subscribed"
       );
     }
 
-    /*
-      User is subscribed.
-    */
-    console.log("KrcHub subscription VERIFIED.");
+    console.log(
+      "KrcHub subscription VERIFIED."
+    );
 
     const downloadToken = crypto
       .randomBytes(32)
@@ -191,9 +194,13 @@ app.get("/oauth2callback", async (req, res) => {
     console.error("YOUTUBE / GOOGLE ERROR");
     console.error("================================");
 
-    console.error("Message:", err.message);
+    console.error(
+      "Message:",
+      err.message
+    );
 
     if (err.response) {
+
       console.error(
         "Status:",
         err.response.status
@@ -232,9 +239,6 @@ app.get("/download", (req, res) => {
     });
   }
 
-  /*
-    One-time token.
-  */
   sessions.delete(token);
 
   res
