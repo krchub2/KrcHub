@@ -242,14 +242,4 @@ app.get("/download", (req, res) => {
     .send(SCRIPT);
 });
 
-app.listen(PORT, () => {
-  console.log("");
-  console.log("================================");
-  console.log("KrcHub Gate");
-  console.log("================================");
-  console.log(
-    `Running: http://localhost:${PORT}`
-  );
-  console.log("================================");
-  console.log("");
-});
+export default app;
