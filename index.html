@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KrcHub — Script Access</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #070707;
+      color: #fff;
+      font-family: Inter, Arial, sans-serif;
+      display: grid;
+      place-items: center;
+    }
+
+    .card {
+      width: min(92%, 520px);
+      padding: 38px;
+      border: 1px solid #242424;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #111, #090909);
+      box-shadow: 0 20px 80px #000;
+    }
+
+    .logo {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+    }
+
+    .logo span {
+      color: #888;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 28px 0 10px;
+    }
+
+    p {
+      color: #aaa;
+      line-height: 1.6;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: #fff;
+      color: #000;
+      font-weight: 800;
+      text-decoration: none;
+      text-align: center;
+      margin-top: 24px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      opacity: .9;
+    }
+
+    .status {
+      margin-top: 18px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #151515;
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    .success {
+      border: 1px solid #2e7d32;
+      color: #a5d6a7;
+    }
+
+    .error {
+      border: 1px solid #7d2e2e;
+      color: #ffb3b3;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+      margin-top: 20px;
+    }
+
+    code {
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #050505;
+      border: 1px solid #202020;
+      padding: 14px;
+      border-radius: 10px;
+      margin-top: 15px;
+      color: #ddd;
+    }
+
+    #loading {
+      display: none;
+      text-align: center;
+      margin-top: 18px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="card">
+
+    <div class="logo">
+      Krc<span>Hub</span>
+    </div>
+
+    <h1>Get the script</h1>
+
+    <p>
+      Subscribe to the KrcHub YouTube channel to unlock the script.
+      After subscribing, your subscription will be checked automatically.
+    </p>
+
+    <button class="btn" id="subscribeBtn">
+      Subscribe on YouTube
+    </button>
+
+    <div id="loading">
+      Opening YouTube and checking your subscription...
+    </div>
+
+    <div id="status"></div>
+    <div id="result"></div>
+
+    <div class="small">
+      Verification is handled through Google/YouTube OAuth.
+      KrcHub does not ask for your Google password.
+    </div>
+
+  </main>
+
+<script>
+
+const params = new URLSearchParams(location.search);
+
+const status = params.get("status");
+const token = params.get("token");
+
+const box = document.getElementById("status");
+const result = document.getElementById("result");
+const subscribeBtn = document.getElementById("subscribeBtn");
+const loading = document.getElementById("loading");
+
+subscribeBtn.addEventListener("click", () => {
+
+  loading.style.display = "block";
+
+  /*
+    Open KrcHub YouTube channel.
+  */
+  window.open(
+    "https://www.youtube.com/@KrcHub?sub_confirmation=1",
+    "_blank"
+  );
+
+  /*
+    Automatically start Google/YouTube authentication
+    after giving the user a moment to subscribe.
+  */
+  setTimeout(() => {
+    window.location.href = "/auth";
+  }, 3000);
+
+});
+
+
+if (status === "not_subscribed") {
+
+  box.className = "status error";
+
+  box.textContent =
+    "Subscription not detected. Please subscribe to KrcHub and try again.";
+
+}
+
+
+else if (status === "error") {
+
+  box.className = "status error";
+
+  box.textContent =
+    "Verification failed. Please try again.";
+
+}
+
+
+else if (status === "channel_error") {
+
+  box.className = "status error";
+
+  box.textContent =
+    "KrcHub channel could not be found. Please try again later.";
+
+}
+
+
+else if (status === "verified" && token) {
+
+  box.className = "status success";
+
+  box.textContent =
+    "Subscription verified successfully.";
+
+  fetch(
+    "/download?token=" +
+    encodeURIComponent(token)
+  )
+
+  .then(response => {
+
+    if (!response.ok) {
+      throw new Error();
+    }
+
+    return response.text();
+
+  })
+
+  .then(script => {
+
+    result.innerHTML =
+      "<p>Your script:</p><code></code>";
+
+    result.querySelector("code").textContent =
+      script;
+
+  })
+
+  .catch(() => {
+
+    result.innerHTML =
+      '<div class="status error">Could not retrieve the script.</div>';
+
+  });
+
+  history.replaceState({}, "", "/");
+
+}
+
+</script>
+
+</body>
+</html>
